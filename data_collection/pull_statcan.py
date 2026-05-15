@@ -163,8 +163,6 @@ def pull():
 
     # ── Save outputs ────────────────────────────────────
     combined.to_csv(OUTPUT_DIR / "statcan_full.csv", index=False)
-    df_naics3.to_csv(OUTPUT_DIR / "statcan_naics3.csv", index=False)
-    df_leaf.to_csv(OUTPUT_DIR / "statcan_leaf_level.csv", index=False)
 
     # ── Diagnostics ─────────────────────────────────────
     print("\nRows per province (leaf level):")
@@ -175,11 +173,7 @@ def pull():
 
     print(f"\nDate range: {df_leaf['ref_date'].min().date()} → {df_leaf['ref_date'].max().date()}")
 
-    print(f"\nSaved:")
-    print(f"  → statcan_full.csv")
-    print(f"  → statcan_naics3.csv")
-    print(f"  → statcan_leaf_level.csv")
-
+    print(f"\nSaved: statcan_retail_raw.csv ({len(combined)} rows)")
 
 # ── Entry point ─────────────────────────────────────────
 if __name__ == "__main__":
