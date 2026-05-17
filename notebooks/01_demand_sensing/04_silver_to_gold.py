@@ -5,7 +5,7 @@
 
 from pyspark.sql import Window
 from pyspark.sql.functions import (
-    col, lag, avg, round as spark_round
+    col, lag, avg, month, when, round as spark_round
 )
 
 df = spark.table("cpg_planning.silver.demand_retail_monthly")
@@ -26,7 +26,23 @@ features = (df
 )
 
 # Drop rows where lags are null (first 12 months per partition)
-features = features.dropna(subset=["lag_12m"])
+features = features.dropna(subset=["lag_12m"]) 
+
+features = (features
+    .withColumn("month", month(col("ref_date")))
+    .withColumn("naics_encoded", 
+        when(col("naics_code") == "445", 1)
+        .when(col("naics_code") == "455", 2)
+        .when(col("naics_code") == "456", 3)
+        .when(col("naics_code") == "457", 4)
+        .when(col("naics_code") == "458", 5))
+    .withColumn("geo_encoded",
+        when(col("geo") == "Ontario", 1)
+        .when(col("geo") == "Quebec", 2)
+        .when(col("geo") == "British Columbia", 3)
+        .when(col("geo") == "Alberta", 4)
+        .when(col("geo") == "Manitoba", 5)
+        .when(col("geo") == "Saskatchewan", 6)))
 
 (features.write
     .format("delta")
