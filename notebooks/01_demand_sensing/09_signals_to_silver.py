@@ -10,6 +10,9 @@ MAJOR_PROVINCES = [
     "Alberta", "Manitoba", "Saskatchewan"
 ]
 
+spark.sql("TRUNCATE TABLE cpg_planning.silver.demand_signals_monthly")
+
+
 signals = spark.table("cpg_planning.bronze.demand_signals")
 
 # ── CPI + GAS: already provincial, just clean ─────────────────

@@ -7,8 +7,11 @@ from pyspark.sql.functions import lag, col, lit
 from pyspark.sql import Window
 
 
+
 gold = spark.table("cpg_planning.gold.demand_feature_table")
 signals = spark.table("cpg_planning.silver.demand_signals_monthly")
+
+
 
 # ── PIVOT signals to wide format ──────────────────────────────
 # Each signal_name becomes a column
@@ -17,6 +20,7 @@ signals_pivot = (signals
     .pivot("signal_name")
     .avg("signal_value"))
 
+
 # ── JOIN to gold ──────────────────────────────────────────────
 # Left join — keep all gold rows, add signals where available
 gold_with_signals = gold.join(
@@ -24,6 +28,7 @@ gold_with_signals = gold.join(
     on=["ref_date", "geo", "naics_code"],
     how="left"
 )
+
 w = Window.partitionBy("naics_code", "geo").orderBy("ref_date")
 
 # Lag all signal columns by 1 month to prevent leakage
@@ -50,5 +55,7 @@ for signal in signal_cols:
     .saveAsTable("cpg_planning.gold.demand_feature_table"))
 
 count = spark.table("cpg_planning.gold.demand_feature_table").count()
+cols = len(spark.table("cpg_planning.gold.demand_feature_table").columns)
+
 print(f"Gold feature table rows: {count}")
 print(f"Total columns: {len(spark.table('cpg_planning.gold.demand_feature_table').columns)}")

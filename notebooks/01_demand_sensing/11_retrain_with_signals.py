@@ -24,24 +24,29 @@ df = df.sort_values("ref_date").reset_index(drop=True)
 
 # All features including signals
 FEATURES = [
-    # Original features
     "lag_1m", "lag_2m", "lag_3m", "lag_6m", "lag_12m",
     "rolling_3m_avg", "rolling_6m_avg",
-    "month", "naics_encoded", "geo_encoded",
-    # New signal features
-    "cpi_lag1", "gas_price_cents_per_litre_lag1",
-    "trends_grocery_delivery_lag1", "trends_food_prices_canada_lag1",
-    "trends_walmart_canada_lag1", "trends_costco_canada_lag1",
-    "trends_pharmacy_canada_lag1", "trends_shoppers_drug_mart_lag1",
-    "trends_gas_prices_canada_lag1", "trends_fuel_prices_lag1",
-    "trends_clothing_sale_canada_lag1", "trends_fashion_canada_lag1"
+    "month", "naics_encoded", "geo_encoded"
 ]
+
 
 TARGET = "value"
 
-# Drop rows where any signal is null
 df_clean = df.dropna(subset=FEATURES)
-print(f"Rows after dropping nulls: {len(df_clean)}")
+
+
+# # Drop rows where any signal is null
+# core_signals = ["lag_1m", "lag_2m", "lag_3m", "lag_6m", "lag_12m",
+#                 "rolling_3m_avg", "rolling_6m_avg",
+#                 "month", "naics_encoded", "geo_encoded",
+#                 "cpi_lag1", "gas_price_cents_per_litre_lag1"]
+
+# df_clean = df.dropna(subset=core_signals)
+
+# Fill remaining nulls with 0 — absent trend signal = no signal
+# trend_cols = [c for c in df_clean.columns if c.startswith("trends_")]
+# df_clean[trend_cols] = df_clean[trend_cols].fillna(0)
+# print(f"Rows after dropping nulls: {len(df_clean)}")
 
 # Time based split
 cutoff = pd.to_datetime(df_clean["ref_date"].max()) - pd.DateOffset(months=12)
