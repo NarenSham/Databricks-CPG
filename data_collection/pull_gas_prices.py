@@ -6,6 +6,7 @@ import requests
 import zipfile
 import io
 import pandas as pd
+import itertools
 
 print("Pulling gas prices from NRCan...")
 
@@ -57,11 +58,16 @@ gas = (gas.groupby(["ref_date", "geo"])["VALUE"]
     .reset_index())
 
 # Add signal metadata
-gas["naics_code"] = "457"  # gasoline category
-gas["signal_name"] = "gas_price_cents_per_litre"
-gas["source"] = "statcan_18100001"
-gas["pulled_at"] = pd.Timestamp.now()
-gas = gas.rename(columns={"VALUE": "signal_value"})
+
+categories = ["445", "455", "456", "457", "458"]
+gas_all = pd.concat([
+    gas.assign(naics_code=cat) for cat in categories
+], ignore_index=True)
+print(f"Rows: {len(gas_all)}")
+gas_all["signal_name"] = "gas_price_cents_per_litre"
+gas_all["source"] = "statcan_18100001"
+gas_all["pulled_at"] = pd.Timestamp.now()
+gas = gas_all.rename(columns={"VALUE": "signal_value"})
 
 gas = gas[["ref_date", "geo", "naics_code", 
            "signal_name", "signal_value", "source", "pulled_at"]]
