@@ -1,3 +1,12 @@
+import sys
+
+# Add the workspace notebooks directory to the Python path
+notebooks_dir = f'/Workspace/Users/{dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()}/Databricks-CPG/notebooks'
+if notebooks_dir not in sys.path:
+    sys.path.insert(0, notebooks_dir)
+
+from Utils.governance_logging import log_decision
+
 from pyspark.sql.functions import col, sum as spark_sum
 
 TARGET_NAICS = ["445", "456", "457", "458", "455"]
@@ -26,3 +35,9 @@ silver = (df
 # Validate
 count = spark.table("cpg_planning.silver.demand_retail_monthly").count()
 print(f"Silver table rows: {count}")
+
+log_decision(
+    agent_name="system",
+    action="silver_table_refreshed",
+    details=f"bronze → silver complete. Rows: {count}. Categories: 445,455,456,457,458. Provinces: 6 major."
+)

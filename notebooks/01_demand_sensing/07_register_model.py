@@ -1,5 +1,12 @@
-from mlflow.tracking import MlflowClient
 import mlflow
+import sys
+from mlflow.tracking import MlflowClient
+# Add the workspace notebooks directory to the Python path
+notebooks_dir = f'/Workspace/Users/{dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()}/Databricks-CPG/notebooks'
+if notebooks_dir not in sys.path:
+    sys.path.insert(0, notebooks_dir)
+
+from Utils.governance_logging import log_decision
 
 username = spark.sql("SELECT current_user()").collect()[0][0]
 experiment_path = f"/Users/{username}/Databricks-CPG/experiments/demand_sensing"
@@ -33,3 +40,10 @@ client.set_registered_model_alias(
 
 print(f"Registered version: {registered.version}")
 print(f"Champion alias set on: cpg_planning.ml.demand_model")
+
+log_decision(
+    agent_name="demand_agent",
+    action="model_promoted_to_champion",
+    details=f"Model version {registered.version} promoted to champion alias. MAPE: {best_run.data.metrics['mape']:.4f}. Run ID: {best_run.info.run_id}.",
+    model_version=str(registered.version)
+)

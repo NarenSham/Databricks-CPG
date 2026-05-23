@@ -4,7 +4,12 @@
 
 import subprocess
 import sys
+# Add the workspace notebooks directory to the Python path
+notebooks_dir = f'/Workspace/Users/{dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()}/Databricks-CPG/notebooks'
+if notebooks_dir not in sys.path:
+    sys.path.insert(0, notebooks_dir)
 
+from Utils.governance_logging import log_decision
 # Install xgboost if not available
 subprocess.check_call([sys.executable, "-m", "pip", "install", "xgboost"])
 
@@ -90,3 +95,11 @@ with mlflow.start_run(run_name="xgboost_pooled_v1"):
     print(f"Overall MAPE: {mape:.4f}")
     print("\nPer category MAPE:")
     print(per_category)
+
+
+log_decision(
+    agent_name="demand_agent",
+    action="model_trained",
+    details=f"XGBoost pooled model. Overall MAPE: {mape:.4f}. Features: {FEATURES}. Train rows: {len(train)}. Test rows: {len(test)}."
+)
+
