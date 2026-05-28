@@ -96,6 +96,37 @@ with mlflow.start_run(run_name="xgboost_pooled_v1"):
     print("\nPer category MAPE:")
     print(per_category)
 
+# ── Write model accuracy to gold table ───────────────────────────────────
+    # Single source of truth for agent confidence calibration
+    # Replaces hardcoded MAPE dicts in downstream notebooks
+    
+    CATEGORY_NAMES_MAP = {
+        "445": "Food and Beverage",
+        "455": "General Merchandise",
+        "456": "Health and Personal Care",
+        "457": "Gasoline Stations",
+        "458": "Clothing and Accessories",
+    }
+    
+    accuracy_records = [
+        {
+            "naics_code":    str(naics),
+            "category_name": CATEGORY_NAMES_MAP.get(str(naics), str(naics)),
+            "mape":          float(cat_mape),
+            "model_version": "champion",
+            "run_id":        mlflow.active_run().info.run_id,
+        }
+        for naics, cat_mape in per_category.items()
+    ]
+    
+    (spark.createDataFrame(accuracy_records)
+     .write.format("delta")
+     .mode("overwrite")
+     .option("overwriteSchema", "true")
+     .saveAsTable("cpg_planning.gold.model_accuracy"))
+    
+    print("\nModel accuracy table written: cpg_planning.gold.model_accuracy")
+
 
 log_decision(
     agent_name="demand_agent",
