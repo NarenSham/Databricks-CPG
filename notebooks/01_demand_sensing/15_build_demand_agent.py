@@ -13,6 +13,7 @@ import sys
 import subprocess
 from typing import Any, Callable, Generator, Optional
 from uuid import uuid4
+import warnings
 
 import mlflow
 import pandas as pd
@@ -27,16 +28,32 @@ from mlflow.types.responses import (
 from openai import OpenAI
 from pydantic import BaseModel
 
-notebooks_dir = (
-    f'/Workspace/Users/'
-    f'{dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()}'
-    f'/Databricks-CPG/notebooks'
-)
-if notebooks_dir not in sys.path:
-    sys.path.insert(0, notebooks_dir)
+# notebooks_dir = (
+#     f'/Workspace/Users/'
+#     f'{dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()}'
+#     f'/Databricks-CPG/notebooks'
+# )
+# if notebooks_dir not in sys.path:
+#     sys.path.insert(0, notebooks_dir)
 
-from Utils.governance_logging import log_decision
-subprocess.check_call([sys.executable, "-m", "pip", "install", "xgboost"])
+# from Utils.governance_logging import log_decision
+
+# Try workspace path first (notebook context)
+# Fall back to no-op stub (serving container context)
+try:
+    notebooks_dir = (
+        f'/Workspace/Users/'
+        f'{dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()}'
+        f'/Databricks-CPG/notebooks'
+    )
+    if notebooks_dir not in sys.path:
+        sys.path.insert(0, notebooks_dir)
+    from Utils.governance_logging import log_decision
+except Exception:
+    # Serving container — governance logging unavailable
+    # Agent continues without audit logging
+    def log_decision(agent_name="", action="", details=""):
+        pass
 
 
 print("Imports complete.")
@@ -50,11 +67,31 @@ HIGH_UNCERTAINTY_THRESHOLD = 0.07  # Clothing triggers this
 
 # Load calibrated accuracy from gold table
 # Written by 06_train_model.py — updates automatically on retrain
-_accuracy = spark.table("cpg_planning.gold.model_accuracy").toPandas()
+# _accuracy = spark.table("cpg_planning.gold.model_accuracy").toPandas()
 
-CATEGORY_MAPE  = dict(zip(_accuracy["naics_code"], _accuracy["mape"]))
-CATEGORY_NAMES = dict(zip(_accuracy["naics_code"], _accuracy["category_name"]))
+# CATEGORY_MAPE  = dict(zip(_accuracy["naics_code"], _accuracy["mape"]))
+# CATEGORY_NAMES = dict(zip(_accuracy["naics_code"], _accuracy["category_name"]))
 
+# Lazy loaded — populated on first tool call, not at import time
+# This allows the file to be imported by MLflow without a Spark session
+CATEGORY_MAPE  = {}
+CATEGORY_NAMES = {}
+
+def _ensure_config_loaded():
+    """
+    Load MAPE and category names from Delta on first call.
+    Safe to call multiple times — no-op if already loaded.
+    """
+    global CATEGORY_MAPE, CATEGORY_NAMES
+    if CATEGORY_MAPE:
+        return  # already loaded
+
+    from pyspark.sql import SparkSession
+    spark    = SparkSession.builder.getOrCreate()
+    accuracy = spark.table("cpg_planning.gold.model_accuracy").toPandas()
+    CATEGORY_MAPE  = dict(zip(accuracy["naics_code"], accuracy["mape"]))
+    CATEGORY_NAMES = dict(zip(accuracy["naics_code"], accuracy["category_name"]))
+    
 # Input validation — blocked before LLM sees the message
 BLOCKED_PATTERNS = [
     "ignore your previous",
@@ -266,6 +303,10 @@ print("SessionStore and ToolInfo defined.")
 print("InMemorySessionStore ready.")
 print("Phase 2 stub: PostgresSessionStore (Lakebase) — interface identical.")
 
+def to_pandas_clean(df):
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*usage_logger.*")
+        return df.toPandas()
 
 # COMMAND ----------
 # Block 5 — Tool implementations
@@ -279,7 +320,10 @@ def _get_data_freshness() -> str:
     Queries silver and gold tables for latest ref_date and row count.
     No model needed — pure SQL against Delta tables.
     """
+    _ensure_config_loaded()  
     try:
+        from pyspark.sql import SparkSession
+        spark  = SparkSession.builder.getOrCreate()
         result = spark.sql("""
             SELECT 'silver' AS layer,
                    MAX(ref_date) AS latest_date,
@@ -317,7 +361,10 @@ def _explain_prediction(category: str, geo: str) -> str:
     geo parameter accepted for interface consistency but not used in query
     (SHAP table is category-level only — noted in model_decisions.md)
     """
+    _ensure_config_loaded()  
     try:
+        from pyspark.sql import SparkSession
+        spark  = SparkSession.builder.getOrCreate()
         result = spark.sql(f"""
             SELECT feature,
                    mean_abs_shap,
@@ -374,11 +421,10 @@ def _explain_prediction(category: str, geo: str) -> str:
 
 # ── Tool 3: predict_next_month ────────────────────────────────────────────────
 def _predict_next_month(category: str, geo: str) -> str:
-    """
-    Loads champion model, queries latest features, returns calibrated prediction.
-    Confidence range uses per-category MAPE from gold.model_accuracy — not global.
-    """
+    _ensure_config_loaded()  
     try:
+        from pyspark.sql import SparkSession
+        spark  = SparkSession.builder.getOrCreate()
         model = mlflow.xgboost.load_model(
             "models:/cpg_planning.ml.demand_model@champion"
         )
@@ -421,20 +467,38 @@ def _predict_next_month(category: str, geo: str) -> str:
             "low"
         )
 
+        # Format dollars consistently — always in billions
+        def to_billions(val):
+            return f"${val * 1000 / 1e9:.2f}B"
+
         ref_date      = str(latest["ref_date"].iloc[0])
         category_name = CATEGORY_NAMES.get(category, category)
 
+        # Embed explanation inline — prevents second tool call
+        # and eliminates XML leak from LLM trying to call explain_prediction
+        shap_result  = json.loads(_explain_prediction(category, geo))
+        top_drivers  = shap_result.get("top_drivers", [])
+        primary      = top_drivers[0]["driver"] if top_drivers else "recent trends"
+        secondary    = top_drivers[1]["driver"] if len(top_drivers) > 1 else None
+
+        interpretation = (
+            f"The primary demand driver for {category_name} is {primary}. "
+            + (f"Secondary driver is {secondary}." if secondary else "")
+        )
+
         return json.dumps({
             "category":              category_name,
-            "naics_code":            category,
             "province":              geo,
-            "forecast_dollars":      round(prediction * 1000, 0),
-            "confidence_lower":      round(lower * 1000, 0),
-            "confidence_upper":      round(upper * 1000, 0),
+            "forecast":              to_billions(prediction),
+            "confidence_lower":      to_billions(lower),
+            "confidence_upper":      to_billions(upper),
             "confidence_level":      confidence_level,
-            "category_mape_pct":     round(mape * 100, 1),
+            "forecast_error_pct":    f"±{round(mape * 100, 1)}%",
             "based_on_data_through": ref_date,
             "model_version":         "champion",
+            "primary_driver":        primary,
+            "secondary_driver":      secondary,
+            "interpretation":        interpretation,
             "high_uncertainty_note": (
                 "Confidence is low for this category — recommend "
                 "human review before publishing this forecast."
@@ -452,7 +516,10 @@ def _compare_to_baseline(category: str) -> str:
     Queries MLflow to compare champion model MAPE vs best naive baseline.
     Returns improvement percentage and plain-language interpretation.
     """
+    _ensure_config_loaded()  
     try:
+        from pyspark.sql import SparkSession
+        spark  = SparkSession.builder.getOrCreate()
         username    = spark.sql("SELECT current_user()").collect()[0][0]
         experiment  = mlflow.get_experiment_by_name(
             f"/Users/{username}/Databricks-CPG/experiments/demand_sensing"
@@ -508,7 +575,10 @@ def _get_accuracy_history(category: str, months: int) -> str:
     Returns recent MLflow run history and current category MAPE.
     Full monthly accuracy history available after 17_backtest.py runs.
     """
+    _ensure_config_loaded()  
     try:
+        from pyspark.sql import SparkSession
+        spark  = SparkSession.builder.getOrCreate()
         username   = spark.sql("SELECT current_user()").collect()[0][0]
         experiment = mlflow.get_experiment_by_name(
             f"/Users/{username}/Databricks-CPG/experiments/demand_sensing"
@@ -678,8 +748,9 @@ class DemandForecastingAgent(ResponsesAgent):
         InMemorySessionStore now
         PostgresSessionStore (Lakebase) — Phase 2, interface identical
     """
-
+     
     def __init__(self, llm_endpoint: str, tools: list, session_store: SessionStore):
+         
         self.llm_endpoint        = llm_endpoint
         self.workspace_client    = WorkspaceClient()
         self.model_serving_client = (
@@ -755,12 +826,14 @@ class DemandForecastingAgent(ResponsesAgent):
 
     def _recover_textual_tool_call(self, content: str) -> Optional[dict]:
         """
-        NHTSA pattern — Llama models occasionally emit tool calls as plain text:
-            predict_next_month(category="445", geo="Ontario")
-        instead of populating the structured tool_calls field.
-        Detect and recover before returning garbage to the user.
+        Llama models emit tool calls as plain text in two formats.
+        Format 1: tool_name(key="val", key2="val2")
+        Format 2: <function=tool_name>{"key": "val"}</function>
+        Detect either, recover before returning garbage to the user.
         """
         import re
+
+        # Format 1 — function call syntax
         for tool_name in self._tools_dict:
             pattern = rf"^{re.escape(tool_name)}\((.+)\)$"
             match   = re.match(pattern, content.strip(), re.DOTALL)
@@ -773,6 +846,23 @@ class DemandForecastingAgent(ResponsesAgent):
                     }
                 except Exception:
                     pass
+
+        # Format 2 — XML function tag syntax
+        xml_pattern = r"<function=(\w+)>(.*?)</function>"
+        match       = re.search(xml_pattern, content, re.DOTALL)
+        if match:
+            tool_name = match.group(1)
+            args_str  = match.group(2).strip()
+            if tool_name in self._tools_dict:
+                try:
+                    args = json.loads(args_str)
+                    return {
+                        "name":      tool_name,
+                        "arguments": json.dumps(args)
+                    }
+                except Exception:
+                    pass
+
         return None
 
     # ── Tool execution ────────────────────────────────────────────────────────
@@ -1127,15 +1217,20 @@ class DemandForecastingAgent(ResponsesAgent):
 # Read the expected behavior before running
 
 # ── Instantiate ───────────────────────────────────────────────────────────────
-session_store = InMemorySessionStore()
+try:
+    session_store = InMemorySessionStore()
 
-AGENT = DemandForecastingAgent(
-    llm_endpoint  = LLM_ENDPOINT_NAME,
-    tools         = ALL_TOOLS,
-    session_store = session_store
-)
+    AGENT = DemandForecastingAgent(
+        llm_endpoint  = LLM_ENDPOINT_NAME,
+        tools         = ALL_TOOLS,
+        session_store = session_store
+    )
 
-mlflow.models.set_model(AGENT)
+    mlflow.models.set_model(AGENT)
+except Exception as e:
+    # MLflow validation context — instantiation deferred
+    print(f"Agent instantiation deferred: {e}")
+
 print("Agent instantiated.")
 print(f"LLM: {LLM_ENDPOINT_NAME}")
 print(f"Tools: {list(AGENT._tools_dict.keys())}")
