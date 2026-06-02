@@ -15,6 +15,7 @@ from typing import Any, Callable, Generator, Optional
 from uuid import uuid4
 import warnings
 
+
 import mlflow
 import pandas as pd
 from databricks.sdk import WorkspaceClient
@@ -172,6 +173,9 @@ OUT OF SCOPE — DECLINE POLITELY:
 - US or international markets
 - Forecasts beyond one month ahead
 - Any question unrelated to Canadian CPG retail demand
+- Any forecast for US states, cities, or non-Canadian geographies
+  If asked about California, Texas, New York, or any US location,
+  decline clearly: "I only cover Canadian provinces"
 
 ACCURACY AND HONESTY RULES:
 - Never invent numbers — only use what the tools return

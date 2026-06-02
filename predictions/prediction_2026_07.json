@@ -1,0 +1,342 @@
+{
+  "meta": {
+    "prediction_date": "2026-06-02",
+    "forecast_month": "2026-07-01",
+    "data_through": "2026-02-01",
+    "model": "cpg_planning.ml.demand_model@champion",
+    "backtest_mape": "4.85%",
+    "note": "First public prediction from CPG Compound AI Platform. Actuals will be published by Statistics Canada ~August 2026. Track record: gold.demand_predictions (Jan 2025 - Feb 2026)"
+  },
+  "predictions": [
+    {
+      "category": "Food and Beverage",
+      "naics_code": "445",
+      "province": "Alberta",
+      "forecast_billions": 1.374,
+      "low_billions": 1.333,
+      "high_billions": 1.415,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.0%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Food and Beverage",
+      "naics_code": "445",
+      "province": "British Columbia",
+      "forecast_billions": 1.885,
+      "low_billions": 1.828,
+      "high_billions": 1.941,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.0%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Food and Beverage",
+      "naics_code": "445",
+      "province": "Manitoba",
+      "forecast_billions": 0.4,
+      "low_billions": 0.388,
+      "high_billions": 0.412,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.0%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Food and Beverage",
+      "naics_code": "445",
+      "province": "Ontario",
+      "forecast_billions": 4.134,
+      "low_billions": 4.01,
+      "high_billions": 4.258,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.0%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Food and Beverage",
+      "naics_code": "445",
+      "province": "Quebec",
+      "forecast_billions": 3.05,
+      "low_billions": 2.958,
+      "high_billions": 3.142,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.0%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Food and Beverage",
+      "naics_code": "445",
+      "province": "Saskatchewan",
+      "forecast_billions": 0.34,
+      "low_billions": 0.33,
+      "high_billions": 0.35,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.0%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "General Merchandise",
+      "naics_code": "455",
+      "province": "Alberta",
+      "forecast_billions": 1.207,
+      "low_billions": 1.164,
+      "high_billions": 1.25,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "General Merchandise",
+      "naics_code": "455",
+      "province": "British Columbia",
+      "forecast_billions": 1.019,
+      "low_billions": 0.982,
+      "high_billions": 1.055,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "General Merchandise",
+      "naics_code": "455",
+      "province": "Manitoba",
+      "forecast_billions": 0.291,
+      "low_billions": 0.28,
+      "high_billions": 0.301,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "General Merchandise",
+      "naics_code": "455",
+      "province": "Ontario",
+      "forecast_billions": 4.293,
+      "low_billions": 4.14,
+      "high_billions": 4.446,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "General Merchandise",
+      "naics_code": "455",
+      "province": "Quebec",
+      "forecast_billions": 1.445,
+      "low_billions": 1.394,
+      "high_billions": 1.497,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "General Merchandise",
+      "naics_code": "455",
+      "province": "Saskatchewan",
+      "forecast_billions": 0.31,
+      "low_billions": 0.299,
+      "high_billions": 0.321,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Health and Personal Care",
+      "naics_code": "456",
+      "province": "Alberta",
+      "forecast_billions": 0.647,
+      "low_billions": 0.624,
+      "high_billions": 0.67,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.5%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Health and Personal Care",
+      "naics_code": "456",
+      "province": "British Columbia",
+      "forecast_billions": 0.82,
+      "low_billions": 0.791,
+      "high_billions": 0.849,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.5%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Health and Personal Care",
+      "naics_code": "456",
+      "province": "Manitoba",
+      "forecast_billions": 0.159,
+      "low_billions": 0.153,
+      "high_billions": 0.164,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.5%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Health and Personal Care",
+      "naics_code": "456",
+      "province": "Ontario",
+      "forecast_billions": 2.135,
+      "low_billions": 2.06,
+      "high_billions": 2.211,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.5%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Health and Personal Care",
+      "naics_code": "456",
+      "province": "Quebec",
+      "forecast_billions": 1.528,
+      "low_billions": 1.474,
+      "high_billions": 1.582,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.5%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Health and Personal Care",
+      "naics_code": "456",
+      "province": "Saskatchewan",
+      "forecast_billions": 0.159,
+      "low_billions": 0.153,
+      "high_billions": 0.164,
+      "confidence": "high",
+      "forecast_error_pct": "\u00b13.5%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Gasoline Stations",
+      "naics_code": "457",
+      "province": "Alberta",
+      "forecast_billions": 0.915,
+      "low_billions": 0.872,
+      "high_billions": 0.959,
+      "confidence": "moderate",
+      "forecast_error_pct": "\u00b14.7%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Gasoline Stations",
+      "naics_code": "457",
+      "province": "British Columbia",
+      "forecast_billions": 0.737,
+      "low_billions": 0.702,
+      "high_billions": 0.772,
+      "confidence": "moderate",
+      "forecast_error_pct": "\u00b14.7%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Gasoline Stations",
+      "naics_code": "457",
+      "province": "Manitoba",
+      "forecast_billions": 0.228,
+      "low_billions": 0.217,
+      "high_billions": 0.238,
+      "confidence": "moderate",
+      "forecast_error_pct": "\u00b14.7%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Gasoline Stations",
+      "naics_code": "457",
+      "province": "Ontario",
+      "forecast_billions": 1.85,
+      "low_billions": 1.762,
+      "high_billions": 1.938,
+      "confidence": "moderate",
+      "forecast_error_pct": "\u00b14.7%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Gasoline Stations",
+      "naics_code": "457",
+      "province": "Quebec",
+      "forecast_billions": 1.075,
+      "low_billions": 1.024,
+      "high_billions": 1.126,
+      "confidence": "moderate",
+      "forecast_error_pct": "\u00b14.7%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Gasoline Stations",
+      "naics_code": "457",
+      "province": "Saskatchewan",
+      "forecast_billions": 0.308,
+      "low_billions": 0.293,
+      "high_billions": 0.322,
+      "confidence": "moderate",
+      "forecast_error_pct": "\u00b14.7%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Clothing and Accessories",
+      "naics_code": "458",
+      "province": "Alberta",
+      "forecast_billions": 0.349,
+      "low_billions": 0.319,
+      "high_billions": 0.379,
+      "confidence": "low",
+      "forecast_error_pct": "\u00b18.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Clothing and Accessories",
+      "naics_code": "458",
+      "province": "British Columbia",
+      "forecast_billions": 0.543,
+      "low_billions": 0.497,
+      "high_billions": 0.59,
+      "confidence": "low",
+      "forecast_error_pct": "\u00b18.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Clothing and Accessories",
+      "naics_code": "458",
+      "province": "Manitoba",
+      "forecast_billions": 0.063,
+      "low_billions": 0.058,
+      "high_billions": 0.069,
+      "confidence": "low",
+      "forecast_error_pct": "\u00b18.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Clothing and Accessories",
+      "naics_code": "458",
+      "province": "Ontario",
+      "forecast_billions": 1.406,
+      "low_billions": 1.285,
+      "high_billions": 1.526,
+      "confidence": "low",
+      "forecast_error_pct": "\u00b18.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Clothing and Accessories",
+      "naics_code": "458",
+      "province": "Quebec",
+      "forecast_billions": 0.582,
+      "low_billions": 0.532,
+      "high_billions": 0.632,
+      "confidence": "low",
+      "forecast_error_pct": "\u00b18.6%",
+      "primary_driver": "year-over-year seasonality"
+    },
+    {
+      "category": "Clothing and Accessories",
+      "naics_code": "458",
+      "province": "Saskatchewan",
+      "forecast_billions": 0.054,
+      "low_billions": 0.049,
+      "high_billions": 0.058,
+      "confidence": "low",
+      "forecast_error_pct": "\u00b18.6%",
+      "primary_driver": "year-over-year seasonality"
+    }
+  ]
+}

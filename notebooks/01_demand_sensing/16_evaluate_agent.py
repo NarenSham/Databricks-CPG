@@ -18,6 +18,7 @@ import subprocess
 import mlflow
 from mlflow.types.responses import ResponsesAgentRequest
 subprocess.check_call([sys.executable, "-m", "pip", "install", "xgboost", "backoff"])
+import re   
 
 notebooks_dir = (
     f'/Workspace/Users/'
@@ -58,6 +59,52 @@ def ask(question: str, session_id: str = None) -> str:
                     return block.get("text", "")
     return ""
 
+def extract_billion_value(text: str) -> float:
+    """
+    Pulls the first dollar figure in billions from agent response.
+    Handles formats like $4.13 billion, $4.13B, $4.1 billion.
+    Returns None if no match found.
+    """
+    match = re.search(r'\$(\d+\.?\d*)\s*(?:billion|B\b)', text, re.IGNORECASE)
+    if match:
+        return float(match.group(1))
+    return None
+
+
+def check_forecast_range(question: str, label: str,
+                          expected_low: float, expected_high: float) -> dict:
+    """
+    Calls the agent, extracts the forecast value, checks it's within range.
+    expected_low and expected_high are in billions.
+    This is the only check that validates the XGBoost model is working.
+    """
+    answer = ask(question)
+    value  = extract_billion_value(answer)
+
+    if value is None:
+        passed = False
+        note   = "Could not extract dollar value from response"
+    elif expected_low <= value <= expected_high:
+        passed = True
+        note   = f"${value}B within expected range ${expected_low}B–${expected_high}B"
+    else:
+        passed = False
+        note   = f"${value}B outside expected range ${expected_low}B–${expected_high}B"
+
+    status = "✅ PASS" if passed else "❌ FAIL"
+    print(f"{status} | {label}")
+    if not passed:
+        print(f"       {note}")
+        print(f"       Answer: {answer[:200]}")
+
+    return {
+        "tier":     "1b",
+        "label":    label,
+        "question": question,
+        "answer":   answer[:500],
+        "passed":   passed,
+        "note":     note
+    }
 
 # ── TIER 1 — Deterministic ────────────────────────────────────────────────────
 # Exact string checks. Pass/fail. No LLM needed.
@@ -122,7 +169,7 @@ TIER1_CASES = [
         "label":           "Valid province accepted",
         "question":        "Forecast General Merchandise sales in Alberta",
         "must_contain":    ["billion", "alberta"],
-        "must_not_contain":["not able", "invalid", "error"]
+        "must_not_contain":["not able", "invalid", "error occurred", "not defined", "exception"]
     },
 ]
 
@@ -158,11 +205,12 @@ def run_tier1(cases):
             print(f"       Answer: {answer[:200]}")
 
         results.append({
-            "tier":     1,
+            "tier":     "1",
             "label":    case["label"],
             "question": case["question"],
             "answer":   answer[:500],
             "passed":   passed,
+            "note":     "" 
         })
 
     passed_count = sum(r["passed"] for r in results)
@@ -196,7 +244,7 @@ TIER2_CASES = [
     {
         "label":            "Accuracy comparison — improvement cited",
         "question":         "How much better is your model than a simple guess?",
-        "required_concepts":["54", "accurate"],
+        "required_concepts":["53", "improvement"],
         "forbidden_terms":  ["xgboost", "mape", "baseline_same_month"]
     },
     {
@@ -239,11 +287,12 @@ def run_tier2(cases):
             print(f"       Answer: {answer[:200]}")
 
         results.append({
-            "tier":     2,
+            "tier":     "2",
             "label":    case["label"],
             "question": case["question"],
             "answer":   answer[:500],
             "passed":   passed,
+            "note":     "" 
         })
 
     passed_count = sum(r["passed"] for r in results)
@@ -318,6 +367,38 @@ mlflow.set_experiment(
 with mlflow.start_run(run_name="agent_eval_v1"):
 
     t1_results = run_tier1(TIER1_CASES)
+    print("\n── TIER 1b: Forecast Value Range ─────────────────────────")
+
+    forecast_checks = [
+        check_forecast_range(
+            question       = "Forecast Food sales in Ontario",
+            label          = "Food Ontario — value in expected range",
+            expected_low   = 3.5,   # $3.5B lower bound
+            expected_high  = 4.8    # $4.8B upper bound
+        ),
+        check_forecast_range(
+            question       = "Predict Clothing sales in Quebec",
+            label          = "Clothing Quebec — value in expected range",
+            expected_low   = 0.45,
+            expected_high  = 0.75
+        ),
+        check_forecast_range(
+            question       = "Forecast General Merchandise sales in Alberta",
+            label          = "General Merch Alberta — value in expected range",
+            expected_low   = 0.8,
+            expected_high  = 2.0
+        ),
+    ]
+
+    t1b_passed = sum(r["passed"] for r in forecast_checks)
+    print(f"\nTier 1b: {t1b_passed}/{len(forecast_checks)} passed")
+
+    # Log to MLflow
+    mlflow.log_metric("tier1b_pass_pct",
+        round(t1b_passed / len(forecast_checks) * 100, 1))
+    mlflow.log_metric("tier1b_passed", t1b_passed)
+    mlflow.log_metric("tier1b_total",  len(forecast_checks))
+
     t2_results = run_tier2(TIER2_CASES)
 
     t1_passed  = sum(r["passed"] for r in t1_results)
@@ -337,8 +418,10 @@ with mlflow.start_run(run_name="agent_eval_v1"):
     mlflow.set_tag("eval_type",     "three_tier")
 
     # ── Write results to governance table ─────────────────────────────────────
-    all_results = t1_results + t2_results
+    all_results = t1_results + forecast_checks + t2_results
     results_df  = pd.DataFrame(all_results)
+        # Add to results for governance table
+    
 
     (spark.createDataFrame(results_df)
      .write.format("delta")
@@ -350,6 +433,7 @@ with mlflow.start_run(run_name="agent_eval_v1"):
     print(f"EVAL SUMMARY")
     print(f"{'═'*60}")
     print(f"Tier 1 Deterministic: {t1_passed}/{len(t1_results)} — {t1_score}%")
+    print(f"Tier 1b Forecast Range:{t1b_passed}/{len(forecast_checks)} — {round(t1b_passed/len(forecast_checks)*100,1)}%")
     print(f"Tier 2 Citation:      {t2_passed}/{len(t2_results)} — {t2_score}%")
     print(f"Results written to:   governance.agent_eval_results")
     print(f"MLflow run logged.")

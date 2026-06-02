@@ -9,6 +9,35 @@ mlflow.set_experiment(
 )
 subprocess.check_call([sys.executable, "-m", "pip", "install", "xgboost", "backoff"])
 
+# ── Input example ─────────────────────────────────────────────────────────────
+# Must match the exact shape Model Serving will POST to the agent.
+# ResponsesAgent expects: {input: [...], custom_inputs: {...}}
+# custom_inputs carries session_id — required for memory continuity.
+
+input_example = {
+    "input": [
+        {"role": "user", "content": "What are forecasted Food sales in Ontario next month?"}
+    ],
+    "custom_inputs": {
+        "session_id": "example-session-001"
+    }
+}
+
+# ── Signature ─────────────────────────────────────────────────────────────────
+# ResponsesAgent has a standard signature — use the MLflow helper.
+# Do NOT hand-roll Schema here; infer_signature from the pyfunc type
+# guarantees it matches what Model Serving validates against.
+
+signature = mlflow.models.infer_signature(
+    model_input  = input_example,
+    model_output = {
+        "output": [
+            {"type": "message", "content": [{"type": "text", "text": "Forecasted retail sales: $2.3B"}]}
+        ],
+        "custom_outputs": {"session_id": "example-session-001"}
+    }
+)
+
 # Step 1 — Log
 with mlflow.start_run(run_name="demand_agent_v1") as run:
     logged = mlflow.pyfunc.log_model(
@@ -18,6 +47,8 @@ with mlflow.start_run(run_name="demand_agent_v1") as run:
             f"/Workspace/Users/{username}/Databricks-CPG/notebooks/Utils/governance_logging.py"
         ],
         pip_requirements = ["xgboost", "mlflow", "databricks-sdk", "backoff"],
+        input_example    = input_example,
+        signature        = signature,
     )
     print(f"Logged: {logged.model_uri}")
 
