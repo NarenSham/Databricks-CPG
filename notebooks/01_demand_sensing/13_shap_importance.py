@@ -1,3 +1,7 @@
+# Databricks notebook source
+
+# COMMAND ----------
+# 
 # 13_shap_importance.py
 # Computes SHAP values for the champion model
 # Stores feature importance as MLflow artifact
@@ -96,7 +100,7 @@ print("Per-Category Feature Importance:")
 print(category_importance.to_string(index=False))
 
 # ── MLflow: log both importance tables as artifacts ───────────────────────────
-with mlflow.start_run(run_name="shap_importance_v1") as run:
+with mlflow.start_run(run_name="shap_importance_v1", nested=True) as run:
 
     # Save CSVs temporarily then log
     global_path   = "/tmp/shap_global_importance.csv"

@@ -184,7 +184,7 @@ print(f"\nWritten: cpg_planning.gold.demand_predictions")
 print(f"Rows: {len(results_df)}")
 
 # ── Log to MLflow ─────────────────────────────────────────────────────────────
-with mlflow.start_run(run_name="backtest_v1"):
+with mlflow.start_run(run_name="backtest_v1", nested=True):
     mlflow.log_metric("backtest_overall_mape",  round(overall_mape, 4))
     mlflow.log_metric("backtest_months",         len(backtest_months))
     mlflow.log_metric("backtest_predictions",    len(records))

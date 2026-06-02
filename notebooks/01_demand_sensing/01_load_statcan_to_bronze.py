@@ -1,3 +1,7 @@
+# Databricks notebook source
+
+# COMMAND ----------
+
 # notebooks/01_demand_sensing/01_load_statcan_to_bronze.py
 # Reads StatCan retail CSV from landing Volume → writes to bronze Delta table.
 

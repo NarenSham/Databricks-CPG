@@ -1,3 +1,8 @@
+
+# Databricks notebook source
+
+# COMMAND ----------
+
 import sys
 
 # Add the workspace notebooks directory to the Python path

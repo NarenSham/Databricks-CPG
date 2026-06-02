@@ -1,5 +1,4 @@
 # Databricks notebook source
-# MAGIC %pip install backoff xgboost
 
 # COMMAND ----------
 
@@ -364,7 +363,7 @@ mlflow.set_experiment(
     f"/Users/{username}/Databricks-CPG/experiments/demand_sensing"
 )
 
-with mlflow.start_run(run_name="agent_eval_v1"):
+with mlflow.start_run(run_name="agent_eval_v1", nested = True):
 
     t1_results = run_tier1(TIER1_CASES)
     print("\n── TIER 1b: Forecast Value Range ─────────────────────────")

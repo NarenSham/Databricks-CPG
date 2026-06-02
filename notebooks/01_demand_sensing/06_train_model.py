@@ -1,3 +1,6 @@
+# Databricks notebook source
+
+# COMMAND ----------
 # notebooks/01_demand_sensing/06_train_model.py
 # Trains a pooled XGBoost model across all categories and provinces.
 # Uses time-series cross validation — never random split.
@@ -54,7 +57,7 @@ X_test = X_test.astype("float64")
 
 
 
-with mlflow.start_run(run_name="xgboost_pooled_v1"):
+with mlflow.start_run(run_name="xgboost_pooled_v1", nested=True):
     
     params = {
         "n_estimators": 100,

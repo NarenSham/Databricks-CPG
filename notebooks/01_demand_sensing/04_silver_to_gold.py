@@ -1,3 +1,6 @@
+# Databricks notebook source
+
+# COMMAND ----------
 # notebooks/01_demand_sensing/04_silver_to_gold.py
 # Builds gold feature table from silver.
 # All features lagged to prevent leakage — when predicting month T,
