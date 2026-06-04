@@ -65,18 +65,29 @@ def run_python_file(name: str):
 
 # ── Check if retrain is needed ────────────────────────────────────────────────
 def should_retrain() -> bool:
-    """
-    Checks recent backtest MAPE against training MAPE.
-    Returns True if recent performance has degraded by more than 20%.
-    """
     try:
-        from pyspark.sql.functions import avg
+        from pyspark.sql.functions import avg, max as spark_max
+        
+        preds = spark.table("cpg_planning.gold.demand_predictions")
+        
+        # Find the latest date in the table, then look back 3 months from there
+        latest_date = preds.agg(spark_max("ref_date")).collect()[0][0]
+        
+        if latest_date is None:
+            print("No predictions found. Skipping retrain check.")
+            return False
+            
         recent = (
-            spark.table("cpg_planning.gold.demand_predictions")
-            .filter("ref_date >= add_months(current_date(), -3)")
+            preds
+            .filter(f"ref_date >= add_months('{latest_date}', -3)")
             .agg(avg("pct_error").alias("recent_mape"))
             .collect()[0]["recent_mape"]
         )
+        
+        if recent is None:
+            print("Insufficient recent data. Skipping retrain check.")
+            return False
+            
         training_mape = 4.68
         degraded      = recent > training_mape * 1.20
 

@@ -1,0 +1,28 @@
+# databricks.yml
+bundle:
+  name: cpg-demand-sensing
+
+resources:
+  jobs:
+    demand_sensing_monthly:
+      name: "CPG Demand Sensing — Monthly Pipeline"
+      schedule:
+        quartz_cron_expression: "0 0 6 1 * ?"
+        timezone_id: "America/Toronto"
+      tasks:
+        - task_key: monthly_pipeline
+          notebook_task:
+            notebook_path: >
+              /Workspace/Users/${var.username}/Databricks-CPG/notebooks/01_demand_sensing/18_lakeflow_job
+          existing_cluster_id: ${var.cluster_id}
+      email_notifications:
+        on_failure:
+          - ${var.alert_email}
+
+variables:
+  username:
+    default: ""
+  cluster_id:
+    default: ""
+  alert_email:
+    default: ""
